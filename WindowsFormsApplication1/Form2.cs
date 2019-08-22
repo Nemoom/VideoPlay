@@ -7,13 +7,15 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using Contrinex.RFID;
+using System.IO;
 
 namespace WindowsFormsApplication1
 {
     public partial class Form2 : Form
     {
         ConIDHF BusRfidHF;
-        IniParser myConfig = new IniParser("config.ini");
+        IniParser myConfig;
+        System.Windows.Forms.Timer timer_status = new System.Windows.Forms.Timer();
         public Form2()
         {
             InitializeComponent();
@@ -27,10 +29,83 @@ namespace WindowsFormsApplication1
             btn_Read.Enabled = false;
             btn_Write.Enabled = false;
         }
-
+        public int ComPort
+        {
+            get
+            {
+                if (File.Exists("config.ini"))
+                {
+                    myConfig = new IniParser("config.ini");
+                    if (!myConfig.KeyExists("ComPort", "Params"))
+                    {
+                        return -1;
+                    }
+                    string s_max = myConfig.GetSetting("Params", "ComPort");
+                    try
+                    {
+                        return Convert.ToInt16(s_max);
+                    }
+                    catch (Exception)
+                    {
+                        return -1;
+                    }
+                }
+                else
+                {
+                    return -1;
+                }
+            }
+            set
+            {
+                myConfig = new IniParser("config.ini");
+                myConfig.AddSetting("Params","ComPort", value.ToString());
+                myConfig.SaveSettings();
+            }
+        }
+        public int RWM_Nb
+        {
+            get
+            {
+                if (File.Exists("config.ini"))
+                {
+                    myConfig = new IniParser("config.ini");
+                    if (!myConfig.KeyExists("RWM_Nb", "Params"))
+                    {
+                        return -1;
+                    }
+                    string s_max = myConfig.GetSetting("Params", "RWM_Nb");
+                    try
+                    {
+                        return Convert.ToInt16(s_max);
+                    }
+                    catch (Exception)
+                    {
+                        return -1;
+                    }
+                }
+                else
+                {
+                    return -1;
+                }
+            }
+            set
+            {
+                myConfig = new IniParser("config.ini");
+                myConfig.AddSetting("Params", "RWM_Nb", value.ToString());
+                myConfig.SaveSettings();
+            }
+        }
         Form1 mf;
+        string videoPath = "";
         private void Form2_Load(object sender, EventArgs e)
         {
+            if (!System.IO.File.Exists("config.ini"))
+            {
+                System.IO.File.Create("config.ini");
+            }
+            myConfig = new IniParser("config.ini");
+            nUD_ComPort.Value = Convert.ToInt16(ComPort);
+            nUD_RWMNb.Value = Convert.ToInt16(RWM_Nb);
             //System.Threading.Thread thrT = new System.Threading.Thread(new System.Threading.ThreadStart(NewForm));
             //thrT.Start();
             //while (thrT.ThreadState != System.Threading.ThreadState.Running) ;
@@ -41,6 +116,48 @@ namespace WindowsFormsApplication1
             mf = new Form1();
             //this.Hide();
             mf.Show();
+
+            btn_Init_Click(sender, e);
+            if (btn_Init.BackColor == Color.GreenYellow)
+            {
+                videoPath = myConfig.GetSetting("binding", "");
+                mf.axWindowsMediaPlayer1.URL = videoPath;
+                mf.axWindowsMediaPlayer1.Ctlcontrols.play();
+                mf.axWindowsMediaPlayer1.settings.setMode("loop", true);
+                timer1.Enabled = true;
+
+                timer_status = new System.Windows.Forms.Timer();
+                timer_status.Tick += new EventHandler(timer_status_Tick);
+                timer_status.Enabled = true;
+            }
+            
+        }
+
+        void timer_status_Tick(object sender, EventArgs e)
+        {
+            btn_Status_Click(sender, e);
+            if (btn_Status.BackColor == Color.GreenYellow)
+            {
+                videoPath = myConfig.GetSetting("binding", StatusData_Cur[0].UID.ToString("X08"));
+                if (videoPath!=null)
+                {
+                    if (File.Exists(videoPath))
+                    {
+                        try
+                        {
+                            mf.axWindowsMediaPlayer1.URL = videoPath;
+                            mf.axWindowsMediaPlayer1.Ctlcontrols.play();
+                            mf.axWindowsMediaPlayer1.settings.setMode("loop", true);
+                            timer1.Enabled = true;
+                        }
+                        catch (Exception)
+                        {
+
+                        }
+                    }                    
+                }
+                
+            }
         }
 
         private void NewForm()
@@ -82,21 +199,24 @@ namespace WindowsFormsApplication1
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            if (Convert.ToInt32(mf.axWindowsMediaPlayer1.playState)==3)
+            try
             {
-                mf.axWindowsMediaPlayer1.fullScreen = true;
-                //timer1.Stop(); timer1.Dispose(); timer1 = null;
+                if (Convert.ToInt32(mf.axWindowsMediaPlayer1.playState) == 3)
+                {
+                    mf.axWindowsMediaPlayer1.fullScreen = true;
+                    //timer1.Stop(); timer1.Dispose(); timer1 = null;
+                    timer1.Enabled = false;
+                }
+            }
+            catch (Exception)
+            {
                 timer1.Enabled = false;
             }
         }
 
         private void btn_Add_Click(object sender, EventArgs e)
         {
-            if (txt_Label.Text == "")
-            {
-                MessageBox.Show("标签不能为空。");
-            }
-            else if (txt_Path.Text == "")
+            if (txt_Path.Text == "")
             {
                 MessageBox.Show("视频路径不能为空。");
             }
@@ -271,7 +391,7 @@ namespace WindowsFormsApplication1
         {
 
         }
-
+        TAG[] StatusData_Cur;
         private void btn_Status_Click(object sender, EventArgs e)
         {
             tBx_Status.Clear();
@@ -281,6 +401,7 @@ namespace WindowsFormsApplication1
             btn_Write.BackColor = Color.Transparent;
             btn_Init.BackColor = Color.Transparent;
             TAG[] StatusData = BusRfidHF.Status((byte)(nUD_RWMNb.Value));//
+            StatusData_Cur = StatusData;
             if (StatusData != null)
             {
                 if (StatusData.Length != 0)
@@ -381,6 +502,9 @@ namespace WindowsFormsApplication1
 
         private void Form2_FormClosing(object sender, FormClosingEventArgs e)
         {
+            ComPort = Convert.ToInt16(nUD_ComPort.Value);
+            RWM_Nb = Convert.ToInt16(nUD_RWMNb.Value);
+           
             if (BusRfidHF != null)//
             {
                 BusRfidHF.Dispose();

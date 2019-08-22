@@ -33,7 +33,6 @@
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.lblData = new System.Windows.Forms.Label();
             this.tBx_Data = new System.Windows.Forms.TextBox();
-            this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.btn_Write = new System.Windows.Forms.Button();
             this.nUD_NbBlocksW = new System.Windows.Forms.NumericUpDown();
             this.label10 = new System.Windows.Forms.Label();
@@ -155,15 +154,6 @@
             this.tBx_Data.Size = new System.Drawing.Size(168, 102);
             this.tBx_Data.TabIndex = 3;
             this.tBx_Data.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.tBx_Data_KeyPress);
-            // 
-            // statusStrip1
-            // 
-            this.statusStrip1.ImageScalingSize = new System.Drawing.Size(20, 20);
-            this.statusStrip1.Location = new System.Drawing.Point(0, 501);
-            this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(685, 22);
-            this.statusStrip1.TabIndex = 5;
-            this.statusStrip1.Text = "statusStrip1";
             // 
             // btn_Write
             // 
@@ -951,7 +941,6 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(685, 523);
-            this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.panel_Main);
             this.Controls.Add(this.toolStrip1);
             this.Controls.Add(this.panel_Main_Serial);
@@ -1009,7 +998,6 @@
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.Label lblData;
         private System.Windows.Forms.TextBox tBx_Data;
-        private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.Button btn_Write;
         private System.Windows.Forms.NumericUpDown nUD_NbBlocksW;
         private System.Windows.Forms.Label label10;
