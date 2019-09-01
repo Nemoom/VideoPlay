@@ -104,21 +104,28 @@ namespace WindowsFormsApplication1
                 System.IO.File.Create("config.ini");
             }
             myConfig = new IniParser("config.ini");
-            nUD_ComPort.Value = Convert.ToInt16(ComPort);
-            nUD_RWMNb.Value = Convert.ToInt16(RWM_Nb);
+            if (ComPort!=-1)
+            {
+                nUD_ComPort.Value = Convert.ToInt16(ComPort);
+            }
+            if (RWM_Nb!=-1)
+            {
+                nUD_RWMNb.Value = Convert.ToInt16(RWM_Nb);
+            }
+
             //System.Threading.Thread thrT = new System.Threading.Thread(new System.Threading.ThreadStart(NewForm));
             //thrT.Start();
             //while (thrT.ThreadState != System.Threading.ThreadState.Running) ;
             //this.WindowState = FormWindowState.Minimized;
             //Application.Run(new Form1());
-
+           
             tsBtn_Main_Click(sender, e);
             mf = new Form1();
             //this.Hide();
             mf.Show();
 
             btn_Init_Click(sender, e);
-            if (btn_Init.BackColor == Color.GreenYellow)
+            if (btn_Status.Enabled)
             {
                 videoPath = myConfig.GetSetting("binding", "");
                 mf.axWindowsMediaPlayer1.URL = videoPath;
@@ -127,34 +134,42 @@ namespace WindowsFormsApplication1
                 timer1.Enabled = true;
 
                 timer_status = new System.Windows.Forms.Timer();
+                timer_status.Interval = 100;
                 timer_status.Tick += new EventHandler(timer_status_Tick);
                 timer_status.Enabled = true;
             }
             
         }
 
+        string lastpath;
         void timer_status_Tick(object sender, EventArgs e)
         {
             btn_Status_Click(sender, e);
             if (btn_Status.BackColor == Color.GreenYellow)
             {
-                videoPath = myConfig.GetSetting("binding", StatusData_Cur[0].UID.ToString("X08"));
+
+                videoPath = myConfig.GetSetting("binding", tBx_Status.Text.Split('\r')[0]);
                 if (videoPath!=null)
                 {
-                    if (File.Exists(videoPath))
+                    if (videoPath!=lastpath)
                     {
-                        try
+                        if (File.Exists(videoPath))
                         {
-                            mf.axWindowsMediaPlayer1.URL = videoPath;
-                            mf.axWindowsMediaPlayer1.Ctlcontrols.play();
-                            mf.axWindowsMediaPlayer1.settings.setMode("loop", true);
-                            timer1.Enabled = true;
-                        }
-                        catch (Exception)
-                        {
+                            try
+                            {
+                                mf.axWindowsMediaPlayer1.URL = videoPath;
+                                mf.axWindowsMediaPlayer1.Ctlcontrols.play();
+                                mf.axWindowsMediaPlayer1.settings.setMode("loop", true);
+                                timer1.Enabled = true;
+                            }
+                            catch (Exception)
+                            {
 
+                            }
                         }
-                    }                    
+                    }
+                    
+                    lastpath = videoPath;
                 }
                 
             }
