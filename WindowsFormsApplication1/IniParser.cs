@@ -75,7 +75,7 @@ namespace WindowsFormsApplication1
                 }
                 catch (Exception ex)
                 {
-                    throw ex;
+                    //throw ex;
                 }
                 finally
                 {

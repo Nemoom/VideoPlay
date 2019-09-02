@@ -54,5 +54,18 @@ namespace WindowsFormsApplication1
         {
             
         }
+
+        private void axWindowsMediaPlayer1_DoubleClickEvent(object sender, AxWMPLib._WMPOCXEvents_DoubleClickEvent e)
+        {
+            this.TopMost = !this.TopMost;
+            if (this.TopMost)
+            {
+                this.FormBorderStyle = FormBorderStyle.None;
+            }
+            else
+            {
+                this.FormBorderStyle = FormBorderStyle.Sizable;
+            }
+        }
     }
 }

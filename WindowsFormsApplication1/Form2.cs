@@ -131,6 +131,8 @@ namespace WindowsFormsApplication1
                 mf.axWindowsMediaPlayer1.URL = videoPath;
                 mf.axWindowsMediaPlayer1.Ctlcontrols.play();
                 mf.axWindowsMediaPlayer1.settings.setMode("loop", true);
+                mf.WindowState = FormWindowState.Maximized;
+                mf.FormBorderStyle = FormBorderStyle.None;
                 timer1.Enabled = true;
 
                 timer_status = new System.Windows.Forms.Timer();
