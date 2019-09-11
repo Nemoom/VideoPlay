@@ -8,6 +8,7 @@ using System.Text;
 using System.Windows.Forms;
 using Contrinex.RFID;
 using System.IO;
+using System.Diagnostics;
 
 namespace WindowsFormsApplication1
 {
@@ -124,57 +125,72 @@ namespace WindowsFormsApplication1
             //this.Hide();
             mf.Show();
 
-            btn_Init_Click(sender, e);
-            if (btn_Status.Enabled)
-            {
-                videoPath = myConfig.GetSetting("binding", "");
-                mf.axWindowsMediaPlayer1.URL = videoPath;
-                mf.axWindowsMediaPlayer1.Ctlcontrols.play();
-                mf.axWindowsMediaPlayer1.settings.setMode("loop", true);
-                mf.WindowState = FormWindowState.Maximized;
-                mf.FormBorderStyle = FormBorderStyle.None;
-                timer1.Enabled = true;
-
-                timer_status = new System.Windows.Forms.Timer();
-                timer_status.Interval = 100;
-                timer_status.Tick += new EventHandler(timer_status_Tick);
-                timer_status.Enabled = true;
-            }
+            timer_status = new System.Windows.Forms.Timer();
+            timer_status.Interval = 100;
+            timer_status.Tick += new EventHandler(timer_status_Tick);
+            timer_status.Enabled = true;            
             
         }
 
-        string lastpath;
+        string lastpath = "";
         void timer_status_Tick(object sender, EventArgs e)
         {
-            btn_Status_Click(sender, e);
-            if (btn_Status.BackColor == Color.GreenYellow)
+            try
             {
-
-                videoPath = myConfig.GetSetting("binding", tBx_Status.Text.Split('\r')[0]);
-                if (videoPath!=null)
+                btn_Init_Click(sender, e);
+                if (btn_Status.Enabled)
                 {
-                    if (videoPath!=lastpath)
+                    if (lastpath == "" && videoPath == "")
                     {
-                        if (File.Exists(videoPath))
-                        {
-                            try
-                            {
-                                mf.axWindowsMediaPlayer1.URL = videoPath;
-                                mf.axWindowsMediaPlayer1.Ctlcontrols.play();
-                                mf.axWindowsMediaPlayer1.settings.setMode("loop", true);
-                                timer1.Enabled = true;
-                            }
-                            catch (Exception)
-                            {
-
-                            }
-                        }
+                        videoPath = myConfig.GetSetting("binding", "");
+                        mf.axWindowsMediaPlayer1.URL = videoPath;
+                        mf.axWindowsMediaPlayer1.Ctlcontrols.play();
+                        mf.axWindowsMediaPlayer1.settings.setMode("loop", true);
+                        mf.WindowState = FormWindowState.Maximized;
+                        mf.FormBorderStyle = FormBorderStyle.None;
+                        timer1.Enabled = true;
                     }
                     
-                    lastpath = videoPath;
+                    btn_Status_Click(sender, e);
+                    if (btn_Status.BackColor == Color.GreenYellow)
+                    {
+                        videoPath = myConfig.GetSetting("binding", tBx_Status.Text.Split('\r')[0]);
+                        if (videoPath != null)
+                        {
+                            if (videoPath != lastpath)
+                            {
+                                if (File.Exists(videoPath))
+                                {
+                                    try
+                                    {
+                                        mf.axWindowsMediaPlayer1.URL = videoPath;
+                                        mf.axWindowsMediaPlayer1.Ctlcontrols.play();
+                                        mf.axWindowsMediaPlayer1.settings.setMode("loop", true);
+                                        timer1.Enabled = true;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        writeLog(ex.Message, logFormat.File);
+                                    }
+                                }
+                                else
+                                {
+                                    writeLog("File not exist", logFormat.File);
+                                }
+                            }
+                            lastpath = videoPath;
+                        }
+                        else
+                        {
+                            writeLog("myConfig.GetSetting is null", logFormat.File);
+                        }
+                    }//got status
                 }
-                
             }
+            catch (Exception ex)
+            {
+                writeLog(ex.Message, logFormat.File);
+            }            
         }
 
         private void NewForm()
@@ -225,9 +241,10 @@ namespace WindowsFormsApplication1
                     timer1.Enabled = false;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 timer1.Enabled = false;
+                writeLog(ex.Message, logFormat.File);
             }
         }
 
@@ -559,5 +576,58 @@ namespace WindowsFormsApplication1
                 txt_Path.Text = openFileDialog1.FileName;
             }
         }
+
+        #region LOG
+        public enum logFormat
+        {
+            Screen = 3,
+            File,
+            Both
+        }
+        bool moreThanOneInstance
+        {
+            get
+            {
+                string currentName = Process.GetCurrentProcess().ProcessName;
+                return Process.GetProcessesByName(currentName).Length > 1;
+            }
+        }
+        object logLock = new object();
+        public void writeLog(string content, logFormat format, params object[] logStringFormatArgs)
+        {
+            string line = string.Empty;
+
+            //lock (logLock)
+            //{
+            // show in screen
+            if (format != logFormat.File)
+            {
+                line = string.IsNullOrWhiteSpace(content) ? "\r\n" : DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss:FFF") + ": " + String.Format(content.TrimEnd(), logStringFormatArgs) + "\r\n";
+                this.Invoke(
+                (EventHandler)delegate
+                { textBox_log.AppendText(line); }
+                );
+            }
+            // store in log file
+            if (format != logFormat.Screen)
+            {
+                const string LOG_DIR = "logs";
+                string logFilePath = Path.Combine(LOG_DIR, DateTime.Now.ToString("yyyy-MM-dd") + ".log");
+                if (!Directory.Exists(LOG_DIR)) Directory.CreateDirectory(LOG_DIR);
+                line = string.IsNullOrWhiteSpace(content) ? "\r\n" : DateTime.Now.ToString("HH:mm:ss") + ": " + String.Format(content.TrimEnd(), logStringFormatArgs) + "\r\n";
+                StreamWriter logFile = new StreamWriter(logFilePath, true, Encoding.UTF8);
+                logFile.Write(line);
+                logFile.Close();
+                logFile.Dispose();
+            }
+            //}
+        }
+
+        private void ClearLog()
+        {
+            textBox_log.Clear();
+        }
+        #endregion
+
     }
 }
